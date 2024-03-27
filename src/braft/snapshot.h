@@ -27,6 +27,7 @@
 #include "braft/file_system_adaptor.h"
 #include "braft/remote_file_copier.h"
 #include "braft/snapshot_throttle.h"
+#include "braft/snapshot_executor.h"
 
 namespace braft {
 
@@ -178,6 +179,8 @@ private:
     RemoteFileCopier _copier;
 };
 
+class SnapshotExecutor;
+
 class LocalSnapshotStorage : public SnapshotStorage {
 friend class LocalSnapshotCopier;
 public:
@@ -192,7 +195,7 @@ public:
     virtual SnapshotWriter* create() WARN_UNUSED_RESULT;
     virtual int close(SnapshotWriter* writer);
 
-    virtual SnapshotReader* open() WARN_UNUSED_RESULT;
+    virtual SnapshotReader* open(bool is_replicator = false) WARN_UNUSED_RESULT;
     virtual int close(SnapshotReader* reader);
     virtual SnapshotReader* copy_from(const std::string& uri) WARN_UNUSED_RESULT;
     virtual SnapshotCopier* start_to_copy_from(const std::string& uri);
@@ -207,6 +210,8 @@ public:
     void set_server_addr(butil::EndPoint server_addr) { _addr = server_addr; }
     bool has_server_addr() { return _addr != butil::EndPoint(); }
     void set_copy_file(bool copy_file) { _copy_file = copy_file; }
+    void set_checkpoint_callback(CheckpointCallback checkpoint_callback) { _checkpoint_callback = std::move(checkpoint_callback); }
+    void set_snapshot_executor(SnapshotExecutor* snapshot_executor) { _snapshot_executor = snapshot_executor; }
 private:
     SnapshotWriter* create(bool from_empty) WARN_UNUSED_RESULT;
     int destroy_snapshot(const std::string& path);
@@ -223,6 +228,8 @@ private:
     bool _copy_file = true;
     scoped_refptr<FileSystemAdaptor> _fs;
     scoped_refptr<SnapshotThrottle> _snapshot_throttle;
+    CheckpointCallback _checkpoint_callback;
+    SnapshotExecutor* _snapshot_executor = nullptr;
 };
 
 }  //  namespace braft

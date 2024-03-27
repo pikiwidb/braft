@@ -794,7 +794,7 @@ void Replicator::_install_snapshot() {
     // blocked if something is wrong, such as throttled for a period of time 
     _st.st = INSTALLING_SNAPSHOT;
 
-    _reader = _options.snapshot_storage->open();
+    _reader = _options.snapshot_storage->open(true);
     if (!_reader) {
         if (_options.snapshot_throttle) {
             _options.snapshot_throttle->finish_one_task(true);

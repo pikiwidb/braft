@@ -36,6 +36,8 @@ struct SnapshotExecutorOptions {
     SnapshotExecutorOptions();
     // URI of SnapshotStorage
     std::string uri;
+    // Used to generate snapshots
+    CheckpointCallback checkpoint_callback;
    
     FSMCaller* fsm_caller;
     NodeImpl* node;
@@ -63,7 +65,7 @@ public:
 
     // Start to snapshot StateMachine, and |done| is called after the execution
     // finishes or fails.
-    void do_snapshot(Closure* done);
+    void do_snapshot(Closure* done, CheckpointCallback checkpoint_callback = nullptr);
 
     // Install snapshot according to the very RPC from leader
     // After the installing succeeds (StateMachine is reset with the snapshot)

@@ -20,6 +20,7 @@
 #ifndef BRAFT_RAFT_H
 #define BRAFT_RAFT_H
 
+#include <functional>
 #include <string>
 
 #include <butil/logging.h>
@@ -475,6 +476,9 @@ struct LeaderLeaseStatus {
     int64_t lease_epoch;
 };
 
+// Used to generate snapshots
+using CheckpointCallback = std::function<void(SnapshotWriter* writer)>;
+
 struct NodeOptions {
     // A follower would become a candidate if it doesn't receive any message 
     // from the leader in |election_timeout_ms| milliseconds
@@ -570,6 +574,9 @@ struct NodeOptions {
 
     // Describe a specific SnapshotStorage in format ${type}://${parameters}
     std::string snapshot_uri;
+
+    // Used to generate snapshots
+    CheckpointCallback checkpoint_callback;
 
     // If enable, we will filter duplicate files before copy remote snapshot,
     // to avoid useless transmission. Two files in local and remote are duplicate,

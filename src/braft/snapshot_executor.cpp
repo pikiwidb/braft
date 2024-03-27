@@ -30,6 +30,12 @@ BRPC_VALIDATE_GFLAG(raft_do_snapshot_min_index_gap, brpc::PositiveInteger);
 class SaveSnapshotDone : public SaveSnapshotClosure {
 public:
     SaveSnapshotDone(SnapshotExecutor* node, SnapshotWriter* writer, Closure* done);
+    SaveSnapshotDone(SnapshotExecutor* node, SnapshotWriter* writer, Closure* done, 
+        CheckpointCallback checkpoint_callback) 
+        : SaveSnapshotDone(node, writer, done) {
+        _checkpoint_callback = checkpoint_callback; 
+    }
+
     virtual ~SaveSnapshotDone();
 
     SnapshotWriter* start(const SnapshotMeta& meta);
@@ -42,6 +48,7 @@ private:
     SnapshotWriter* _writer;
     Closure* _done; // user done
     SnapshotMeta _meta;
+    CheckpointCallback _checkpoint_callback;
 };
 
 class InstallSnapshotDone : public LoadSnapshotClosure {
@@ -111,7 +118,7 @@ SnapshotExecutor::~SnapshotExecutor() {
     }
 }
 
-void SnapshotExecutor::do_snapshot(Closure* done) {
+void SnapshotExecutor::do_snapshot(Closure* done, CheckpointCallback checkpoint_callback) {
     std::unique_lock<raft_mutex_t> lck(_mutex);
     int64_t saved_last_snapshot_index = _last_snapshot_index;
     int64_t saved_last_snapshot_term = _last_snapshot_term;
@@ -174,7 +181,7 @@ void SnapshotExecutor::do_snapshot(Closure* done) {
         return;
     }
     _saving_snapshot = true;
-    SaveSnapshotDone* snapshot_save_done = new SaveSnapshotDone(this, writer, done);
+    SaveSnapshotDone* snapshot_save_done = new SaveSnapshotDone(this, writer, done, checkpoint_callback);
     if (_fsm_caller->on_snapshot_save(snapshot_save_done) != 0) {
         lck.unlock();
         if (done) {
@@ -308,6 +315,11 @@ SnapshotWriter* SaveSnapshotDone::start(const SnapshotMeta& meta) {
 void* SaveSnapshotDone::continue_run(void* arg) {
     SaveSnapshotDone* self = (SaveSnapshotDone*)arg;
     std::unique_ptr<SaveSnapshotDone> self_guard(self);
+    // generate snapshot
+    if (self->_checkpoint_callback) {
+        self->_checkpoint_callback(self->_writer);
+    }
+
     // Must call on_snapshot_save_done to clear _saving_snapshot
     int ret = self->_se->on_snapshot_save_done(
         self->status(), self->_meta, self->_writer);
@@ -364,6 +376,12 @@ int SnapshotExecutor::init(const SnapshotExecutorOptions& options) {
         _snapshot_throttle = options.snapshot_throttle;
         _snapshot_storage->set_snapshot_throttle(options.snapshot_throttle);
     }
+    if (options.checkpoint_callback) {
+        LocalSnapshotStorage* tmp = dynamic_cast<LocalSnapshotStorage*>(_snapshot_storage);
+        tmp->set_checkpoint_callback(options.checkpoint_callback);
+        tmp->set_snapshot_executor(this);
+    }
+    
     if (_snapshot_storage->init() != 0) {
         LOG(ERROR) << "node " << _node->node_id() 
                    << " fail to init snapshot storage, uri " << options.uri;

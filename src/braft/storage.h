@@ -330,7 +330,7 @@ public:
     virtual int close(SnapshotWriter* writer) = 0;
 
     // get lastest snapshot reader
-    virtual SnapshotReader* open() = 0;
+    virtual SnapshotReader* open(bool is_replicator = false) = 0;
 
     // close snapshot reader
     virtual int close(SnapshotReader* reader) = 0;

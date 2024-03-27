@@ -249,6 +249,7 @@ int NodeImpl::init_snapshot_storage() {
     _snapshot_executor = new SnapshotExecutor;
     SnapshotExecutorOptions opt;
     opt.uri = _options.snapshot_uri;
+    opt.checkpoint_callback = _options.checkpoint_callback;
     opt.fsm_caller = _fsm_caller;
     opt.node = this;
     opt.log_manager = _log_manager;
