@@ -671,8 +671,6 @@ int LocalSnapshotStorage::close(SnapshotWriter* writer_base,
 }
 
 SnapshotReader* LocalSnapshotStorage::open(bool is_replicator) {
-    std::unique_lock<raft_mutex_t> lck(_mutex);
-
     // After a follower joins a cluster, real snapshots need to be generated
     if (is_replicator && _checkpoint_callback) {
         SynchronizedClosure done;
@@ -685,6 +683,7 @@ SnapshotReader* LocalSnapshotStorage::open(bool is_replicator) {
         }
     }
 
+    std::unique_lock<raft_mutex_t> lck(_mutex);
     if (_last_snapshot_index != 0) {
         const int64_t last_snapshot_index = _last_snapshot_index;
         ++_ref_map[last_snapshot_index];
