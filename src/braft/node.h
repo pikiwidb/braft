@@ -145,7 +145,10 @@ public:
     butil::Status reset_peers(const Configuration& new_peers);
 
     // customize the log playback point
-    void set_self_playback_point(int64_t self_playback_point);
+    void set_last_applied_index_and_term(int64_t last_applied_index);
+
+    // get conf(include learners) by log index
+    void get_configuration(const int64_t index, ConfigurationEntry *conf, ConfigurationEntry *learner_conf);
 
     // get term by log index
     uint64_t get_term(uint64_t log_index);

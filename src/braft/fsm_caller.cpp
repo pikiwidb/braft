@@ -561,10 +561,10 @@ void FSMCaller::describe(std::ostream &os, bool use_html) {
     os << newline;
 }
 
-void FSMCaller::set_self_playback_point(int64_t self_playback_point) {
-    _last_applied_index.store(self_playback_point,
-                              butil::memory_order_relaxed);
-    _last_applied_term = _log_manager->get_term(self_playback_point);
+void FSMCaller::set_last_applied_index_and_term(int64_t last_applied_index) {
+    _last_applied_index.store(last_applied_index,
+                                butil::memory_order_relaxed);
+    _last_applied_term = _log_manager->get_term(last_applied_index);
 }
 
 int64_t FSMCaller::applying_index() const {
