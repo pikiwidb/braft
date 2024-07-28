@@ -20,6 +20,7 @@
 #include <butil/string_printf.h>
 #include <butil/class_name.h>
 #include <vector>
+#include "braft/configuration_manager.h"
 #include "braft/raft.h"
 #include "braft/node.h"
 #include "braft/storage.h"
@@ -215,8 +216,12 @@ butil::Status Node::reset_peers(const Configuration& new_peers) {
     return _impl->reset_peers(new_peers);
 }
 
-void Node::set_self_playback_point(int64_t self_playback_point) {
-    _impl->set_self_playback_point(self_playback_point);
+void Node::set_last_applied_index_and_term(int64_t last_applied_index) {
+    _impl->set_last_applied_index_and_term(last_applied_index);
+}
+
+void Node::get_configuration(const int64_t index, ConfigurationEntry *conf, ConfigurationEntry *learner_conf) {
+    _impl->get_configuration(index, conf, learner_conf);
 }
 
 uint64_t Node::get_term(uint64_t log_index) {

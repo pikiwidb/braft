@@ -96,8 +96,8 @@ void ConfigurationManager::get(int64_t last_included_index,
 void ConfigurationManager::get_learner_conf(int64_t last_included_index,
                                ConfigurationEntry* conf) {
     if (_learner_configurations.empty()) {
-        CHECK_GE(last_included_index, _snapshot.id.index);
-        *conf = _snapshot;
+        CHECK_GE(last_included_index, _learner_snapshot.id.index);
+        *conf = _learner_snapshot;
         return;
     }
     std::deque<ConfigurationEntry>::iterator it;
@@ -107,7 +107,7 @@ void ConfigurationManager::get_learner_conf(int64_t last_included_index,
         }
     }
     if (it == _learner_configurations.begin()) {
-        *conf = _snapshot;
+        *conf = _learner_snapshot;
         return;
     }
     --it;
