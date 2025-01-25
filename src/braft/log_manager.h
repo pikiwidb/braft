@@ -153,6 +153,8 @@ public:
     // Get the internal status of LogManager.
     void get_status(LogManagerStatus* status);
 
+    
+
 private:
 friend class AppendBatcher;
     struct WaitMeta {

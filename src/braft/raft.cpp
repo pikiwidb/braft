@@ -272,6 +272,10 @@ bool Node::readonly() {
     return _impl->readonly();
 }
 
+int Node::get_log_size_diff_by_index(int index1, int index2) {
+    return _impl->get_log_size_diff_by_index(index1, index2);
+}
+
 // ------------- Iterator
 void Iterator::next() {
     if (valid()) {

@@ -2252,6 +2252,44 @@ void NodeImpl::on_learner_config_apply(LogEntry *entry) {
     }
 }
 
+int NodeImpl::get_log_size_diff_by_index(int index1, int index2) {
+    if (index1 > index2) {
+        std::swap(index1, index2);
+    }
+
+    const int64_t first_log_index = _log_manager->first_log_index();
+    const int64_t last_log_index = _log_manager->last_log_index();
+
+    if (index1 < first_log_index) {
+        LOG(ERROR) << "node " << _group_id << ":" << _server_id
+                   << " index1=" << index1 << " is out of range, first_log_index=" 
+                   << first_log_index;
+        return -1;
+    }
+    if (index2 > last_log_index) {
+        LOG(ERROR) << "node " << _group_id << ":" << _server_id
+                   << " index2=" << index2 << " is out of range, last_log_index=" 
+                   << last_log_index;
+        return -1;
+    }
+
+    int total_size = 0;
+    for (int64_t i = index1; i <= index2; ++i) {
+        LogEntry* entry = _log_manager->get_entry(i);
+        if (!entry) {
+            LOG(ERROR) << "node " << _group_id << ":" << _server_id
+                       << " failed to get log entry at index=" << i;
+            return -1;
+        }
+        LOG(INFO) << "node entry index " << i << " : size " << entry->data.length();
+
+        total_size += entry->data.length();
+        entry->Release();
+    }
+
+    return total_size;
+}
+
 void NodeImpl::unsafe_apply_configuration(const Configuration& new_conf,
                                           const Configuration* old_conf,
                                           bool leader_start) {

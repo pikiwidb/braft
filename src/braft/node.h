@@ -263,6 +263,8 @@ public:
     // Called when the learners configuration is applied to the FSMCaller
     void on_learner_config_apply(LogEntry *entry);
 
+    int get_log_size_diff_by_index(int index1, int index2);
+
 private:
 friend class butil::RefCountedThreadSafe<NodeImpl>;
 

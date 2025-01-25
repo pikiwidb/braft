@@ -817,6 +817,8 @@ public:
     //        is less than the majority.
     bool readonly();
 
+    int get_log_size_diff_by_index(int index1, int index2);
+
 private:
     NodeImpl* _impl;
 };

@@ -3907,6 +3907,63 @@ TEST_P(NodeTest, readonly) {
     cluster.stop_all();
 }
 
+TEST_P(NodeTest, GetLogSizeDiffByIndex) {
+    std::vector<braft::PeerId> peers;
+    braft::PeerId peer0;
+    peer0.addr.ip = butil::my_ip();
+    peer0.addr.port = 5006;
+    peers.push_back(peer0);
+
+    Cluster cluster("unittest", peers);
+    ASSERT_EQ(0, cluster.start(peer0.addr));
+    cluster.wait_leader();
+    braft::Node* leader = cluster.leader();
+    ASSERT_TRUE(leader != nullptr);
+
+    const std::vector<std::string> test_logs = {
+        "log1",        // 4 bytes
+        "longer_log2", // 11 bytes
+        "log3",        // 4 bytes
+        "very_very_long_log4" // 19 bytes
+    };
+    const int expected_total_size = 4 + 11 + 4 + 19;
+
+    bthread::CountdownEvent cond(test_logs.size());
+    for (const auto& log : test_logs) {
+        butil::IOBuf data;
+        data.append(log);
+        braft::Task task;
+        task.data = &data;
+        task.done = NEW_APPLYCLOSURE(&cond, 0);
+        leader->apply(task);
+    }
+    cond.wait();
+
+    const int64_t last_idx = leader->get_last_log_index();
+    ASSERT_EQ(last_idx, test_logs.size() + 1); // Initial config log + 4 test logs
+
+    // Test Case 1: Same indices
+    EXPECT_EQ(19, leader->get_log_size_diff_by_index(last_idx, last_idx));
+
+    // Test Case 2: Full range calculation (entries 2-5)
+    EXPECT_EQ(expected_total_size, 
+             leader->get_log_size_diff_by_index(1, last_idx));
+
+    // Test Case 3: Reverse index order
+    EXPECT_EQ(expected_total_size, 
+             leader->get_log_size_diff_by_index(last_idx, 1));
+
+    // Test Case 4: Partial range calculation (entries 3-4)
+    EXPECT_EQ(11 + 4, 
+             leader->get_log_size_diff_by_index(2, 3));
+
+    // Test Case 5: Out-of-bound detection
+    EXPECT_EQ(-1, leader->get_log_size_diff_by_index(0, last_idx));   // Lower bound
+    EXPECT_EQ(-1, leader->get_log_size_diff_by_index(1, last_idx+1)); // Upper bound
+
+    cluster.stop_all();
+}
+
 INSTANTIATE_TEST_CASE_P(NodeTestWithoutPipelineReplication,
                         NodeTest,
                         ::testing::Values("NoReplcation"));
