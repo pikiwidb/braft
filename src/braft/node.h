@@ -262,8 +262,13 @@ public:
 
     // Called when the learners configuration is applied to the FSMCaller
     void on_learner_config_apply(LogEntry *entry);
-
-    int get_log_size_diff_by_index(int index1, int index2);
+    
+    // Calculate the total size of log entries between index1 and index2 (inclusive).
+    // Thread-safe.
+    // @param index1 Start index, must be >= first_log_index
+    // @param index2 End index, must be <= last_log_index and >= index1
+    // @return Total size in bytes if successful, negative value on error
+    int get_log_size_diff_by_index(int64_t index1, int64_t index2);
 
 private:
 friend class butil::RefCountedThreadSafe<NodeImpl>;
