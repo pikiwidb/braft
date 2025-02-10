@@ -2256,7 +2256,6 @@ void NodeImpl::on_learner_config_apply(LogEntry *entry) {
 // Returns:
 //   >0: Total size in bytes
 //   -1: If indices are invalid or out of range
-//   -2: If index2 < index1
 // Note: Both indices must be within the valid log range [first_log_index, last_log_index]
 int NodeImpl::get_log_size_diff_by_index(int64_t index1, int64_t index2) {
     if (index1 > index2) {
